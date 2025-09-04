@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>粉系个人作品集 · 全屏翻页</title>
+    <style>
+      /* 基础与自适应 */
+      :root {
+        --wrap-w-desktop: 66vw;
+        --wrap-w-max: 820px;
+        --wrap-w-mobile: 92vw;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #f6e9ea;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei",
+          sans-serif;
+        color: #2b2b2b;
+      }
+
+      .wrap {
+        width: min(var(--wrap-w-desktop), var(--wrap-w-max));
+        margin: 32px auto 56px;
+        position: relative; /* 点赞相对定位 */
+      }
+      @media (max-width: 1024px) {
+        .wrap {
+          width: min(72vw, var(--wrap-w-max));
+        }
+      }
+      @media (max-width: 768px) {
+        .wrap {
+          width: var(--wrap-w-mobile);
+          margin: 20px auto 48px;
+        }
+      }
+
+      .bg {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 22px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.12);
+      }
+      svg {
+        position: absolute;
+        inset: 0;
+        border-radius: 22px;
+        z-index: 20;
+        max-width: 100%;
+        height: 100%;
+      }
+      .hit {
+        fill: transparent;
+        stroke: transparent;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: filter 0.2s;
+      }
+      .hit:hover {
+        filter: drop-shadow(0 0 8px rgba(255, 130, 170, 0.45));
+      }
+
+      /* 顶部导航 */
+      .topnav {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 70;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 999px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      }
+      .topnav a {
+        padding: 6px 10px;
+        border-radius: 999px;
+        text-decoration: none;
+        color: #2b2b2b;
+        font-size: 14px;
+      }
+      .topnav a:hover {
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      /* 全屏模块（方案四：卡片居中） */
+      .screen {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: linear-gradient(180deg, #fff6fb 0%, #f8e9ef 100%);
+      }
+      .screen.show {
+        display: block;
+        animation: fadin 0.22s ease;
+      }
+      @keyframes fadin {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .page {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        pointer-events: none;
+      }
+      .page .card {
+        width: min(92vw, 900px);
+        max-height: 82vh;
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 28px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22);
+        padding: 22px;
+        pointer-events: auto;
+        /* 补丁 ④：给卡片左右留出安全边距，避免被左右按钮遮住 */
+        margin: 0 88px;
+      }
+      @media (max-width: 768px) {
+        .page .card {
+          margin: 0 64px;
+        }
+      }
+      @media (max-width: 420px) {
+        .page .card {
+          margin: 0 52px;
+        }
+      }
+      .page h2 {
+        margin: 0 0 8px;
+      }
+
+      /* 翻页/返回 */
+      .screen .nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        border: 0;
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+        z-index: 120;
+      }
+      .screen .nav.prev {
+        left: 16px;
+      }
+      .screen .nav.next {
+        right: 16px;
+      }
+      .backHome {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        border: 0;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(6px);
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        z-index: 120;
+      }
+
+      /* 点赞按钮：位于心形热区中心（相对 .wrap） */
+      .like {
+        position: absolute;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 999px;
+        padding: 8px 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+        font-weight: 700;
+        z-index: 150;
+      }
+
+      /* 作品集网格与灯箱 */
+      .filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 6px 0 12px;
+      }
+      .filter-btn {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: #fff;
+        border-radius: 999px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      .filter-btn.active {
+        background: #ffe8f1;
+        border-color: #ffb3cc;
+      }
+      .works-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+      }
+      .work-card {
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      .work-card .thumb {
+        aspect-ratio: 4/3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .work-card .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .work-card .meta {
+        padding: 10px 12px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .tag {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f6f6f6;
+      }
+      .open-btn {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: #fff;
+        border-radius: 8px;
+        padding: 6px 8px;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+      }
+      .lightbox.show {
+        display: flex;
+      }
+      .lightbox img {
+        max-width: 92vw;
+        max-height: 86vh;
+        border-radius: 14px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        user-select: none;
+      }
+
+      /* 补丁 ②：悬浮提示 tooltip 样式 */
+      .tip {
+        position: fixed;
+        z-index: 170;
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -120%);
+        transition: opacity 0.12s ease;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 6px 10px;
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        font-size: 13px;
+        color: #2b2b2b;
+      }
+      .tip.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 顶部导航 -->
+    <div class="topnav">
+      <a data-key="kitchen">公众号</a>
+      <a data-key="dining">作品集</a>
+      <a data-key="bed">联系我</a>
+      <a data-key="bath">关于我</a>
+      <a data-key="utility">相册</a>
+      <a data-key="stairs">笔记</a>
+    </div>
+
+    <!-- 首页 -->
+    <div class="wrap" id="home">
+      <img src="house.png" class="bg" id="bg" alt="房子插图" />
+      <svg viewBox="0 0 100 133.333" preserveAspectRatio="none" id="svg">
+        <polygon id="kitchen" class="hit"></polygon>
+        <polygon id="bath" class="hit"></polygon>
+        <polygon id="dining" class="hit"></polygon>
+        <polygon id="bed" class="hit"></polygon>
+        <polygon id="utility" class="hit"></polygon>
+        <polygon id="stairs" class="hit"></polygon>
+        <polygon id="heartZone" class="hit"></polygon>
+      </svg>
+      <button class="like" id="likeBtn">
+        ❤️ <span id="likeCount">0</span>
+      </button>
+    </div>
+
+    <!-- 补丁 ①：悬浮提示层 -->
+    <div id="tooltip" class="tip"></div>
+
+    <!-- 全屏模块卡片 -->
+    <div class="screen" id="screen">
+      <button class="backHome" id="backHome">🏠</button>
+      <button class="nav prev" id="prevBtn">‹</button>
+      <button class="nav next" id="nextBtn">›</button>
+      <div class="page"><div class="card" id="pageCard"></div></div>
+    </div>
+
+    <!-- 图片灯箱 -->
+    <div class="lightbox" id="lightbox"><img alt="" /></div>
+
+    <script>
+      /* ====== 坐标（你的成果） ====== */
+      const AREAS = {
+        kitchen: [
+          [16.567460317460316, 38.18332605820106],
+          [36.11111111111111, 20.10576984126984],
+          [35.11904761904761, 64.10918716931216],
+          [14.880952380952381, 63.668271164021164],
+        ],
+        bath: [
+          [38.65476190476191, 20.973557539682538],
+          [49.702380952380956, 10.670167328042329],
+          [85.41666666666666, 37.56604365079365],
+          [85.71428571428571, 64.28555357142857],
+          [37.59920634920635, 63.31553835978836],
+        ],
+        dining: [
+          [15.079365079365079, 67.37196560846562],
+          [59.523809523809526, 66.4019503968254],
+          [58.92857142857143, 106.8780396825397],
+          [13.59126984126984, 105.99620767195768],
+        ],
+        bed: [
+          [62.51190476190476, 67.22925132275132],
+          [75, 67.1955992063492],
+          [87.51190476190476, 67.22925132275132],
+          [88.69047619047619, 105.90802447089946],
+          [61.70634920634921, 106.78985648148148],
+        ],
+        utility: [
+          [7.87037037037037, 110.49355092592593],
+          [39.120370370370374, 111.59094187242798],
+          [38.04012345679013, 140.39745421810701],
+          [8.256172839506174, 140.39745421810701],
+        ],
+        stairs: [
+          [41.358024691358025, 111.72811574074073],
+          [59.49074074074075, 112.68833281893005],
+          [59.79938271604939, 140.39745421810701],
+          [41.2037037037037, 140.39745421810701],
+        ],
+        heartZone: [
+          [74.20634920634922, 138.35944246031744],
+          [69.3452380952381, 131.3047863756614],
+          [70.23809523809524, 124.16194708994709],
+          [75.1984126984127, 118.78277182539682],
+          [82.53968253968253, 120.10551984126984],
+          [89.18650793650794, 118.69458862433862],
+          [94.84126984126985, 124.86741269841269],
+          [95.03968253968254, 131.21660317460316],
+          [91.56746031746032, 138.35944246031744],
+          [82.0436507936508, 143.29770171957674],
+        ],
+      };
+
+      /* ====== 渲染多边形 ====== */
+      const svg = document.getElementById("svg");
+      for (const id in AREAS) {
+        const el = document.getElementById(id);
+        if (el)
+          el.setAttribute(
+            "points",
+            AREAS[id].map((p) => p.join(",")).join(" ")
+          );
+      }
+
+      /* ====== 顶部导航/标签（含心形说明） ====== */
+      const order = ["kitchen", "dining", "bed", "bath", "utility", "stairs"];
+      const labels = {
+        kitchen: "公众号",
+        dining: "作品集",
+        bed: "联系我",
+        bath: "关于我",
+        utility: "相册",
+        stairs: "笔记",
+        heartZone: "点赞",
+      };
+      document
+        .querySelectorAll(".topnav a")
+        .forEach((a) => (a.onclick = () => openPage(a.dataset.key)));
+
+      /* ====== 点赞（本地单票，可取消） ====== */
+      const likeKey = "site-like-count-v1";
+      const likedKey = "site-like-liked-v1";
+      const likeBtn = document.getElementById("likeBtn");
+      const likeCount = document.getElementById("likeCount");
+      function loadLike() {
+        const liked = localStorage.getItem(likedKey) === "1";
+        likeCount.textContent = Number(localStorage.getItem(likeKey) || 0);
+        likeBtn.classList.toggle("on", liked);
+      }
+      function toggleLike() {
+        let c = Number(localStorage.getItem(likeKey) || 0);
+        const liked = localStorage.getItem(likedKey) === "1";
+        if (liked) {
+          c = Math.max(0, c - 1);
+          localStorage.setItem(likedKey, "0");
+        } else {
+          c = c + 1;
+          localStorage.setItem(likedKey, "1");
+        }
+        localStorage.setItem(likeKey, c);
+        loadLike();
+        placeLike();
+      }
+      likeBtn.onclick = toggleLike;
+      loadLike();
+
+      /* ====== ❤ 定位到心形热区几何中心（getBBox） ====== */
+      function placeLike() {
+        const wrap = document.getElementById("home");
+        const heart = document.getElementById("heartZone");
+        if (!wrap || !heart) return;
+
+        const vbW = 100,
+          vbH = 133.333; // viewBox 固定值
+        const box = heart.getBBox(); // SVG 坐标系
+        const cx = box.x + box.width / 2;
+        const cy = box.y + box.height / 2;
+
+        const r = wrap.getBoundingClientRect();
+        likeBtn.style.left = r.width * (cx / vbW) + "px";
+        likeBtn.style.top = r.height * (cy / vbH) + "px";
+      }
+      window.addEventListener("load", placeLike);
+      window.addEventListener("resize", placeLike);
+
+      /* ====== 补丁 ③：悬浮提示 tooltip ====== */
+      const tooltip = document.getElementById("tooltip");
+      function showTip(text, x, y) {
+        tooltip.textContent = text;
+        tooltip.style.left = x + "px";
+        tooltip.style.top = y + "px";
+        tooltip.classList.add("show");
+      }
+      function hideTip() {
+        tooltip.classList.remove("show");
+      }
+      svg.querySelectorAll(".hit").forEach((poly) => {
+        const name = labels[poly.id];
+        if (!name) return;
+        poly.addEventListener("mousemove", (e) =>
+          showTip(name, e.clientX, e.clientY)
+        );
+        poly.addEventListener("mouseleave", hideTip);
+        poly.addEventListener(
+          "touchstart",
+          (e) => {
+            const t = e.touches[0];
+            showTip(name, t.clientX, t.clientY);
+            setTimeout(hideTip, 900);
+          },
+          { passive: true }
+        );
+      });
+
+      /* ====== 全屏模块（方案四） ====== */
+      const screenEl = document.getElementById("screen");
+      const pageCard = document.getElementById("pageCard");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const backHome = document.getElementById("backHome");
+      let current = 0;
+
+      function openPage(key) {
+        hideTip(); // 进页面时隐藏提示
+        current = Math.max(0, order.indexOf(key));
+        if (current < 0) current = 0;
+        renderPage();
+        screenEl.classList.add("show");
+      }
+      function closePage() {
+        screenEl.classList.remove("show");
+      }
+      backHome.onclick = closePage;
+      prevBtn.onclick = () => {
+        current = (current - 1 + order.length) % order.length;
+        renderPage();
+      };
+      nextBtn.onclick = () => {
+        current = (current + 1) % order.length;
+        renderPage();
+      };
+      window.addEventListener("keydown", (e) => {
+        if (!screenEl.classList.contains("show")) return;
+        if (e.key === "ArrowLeft") prevBtn.click();
+        if (e.key === "ArrowRight") nextBtn.click();
+        if (e.key === "Escape") closePage();
+      });
+
+      /* ====== 作品集数据（示例） ====== */
+      const LINKS = {
+        wechat: "https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg",
+      };
+      const WORKS = [
+        { type: "image", src: "gallery/1.jpg", title: "protrait" },
+        { type: "image", src: "gallery/2.jpg", title: "插画 2" },
+        {
+          type: "link",
+          href: "https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg",
+          title: "晚上有蚊子在耳朵边嗡嗡叫，睡不着怎么办？🦟🦟🦟",
+        },
+        {
+          type: "doc",
+          href: "docs/《文化具有多样性》教学设计.docx",
+          title: "《文化具有多样性》教学设计（docx）",
+          thumb: "docs/《文化具有多样性》教学设计.png",
+        },
+        { type: "image", src: "gallery/3.jpg", title: "插画 3" },
+      ];
+
+      /* ====== 灯箱 ====== */
+      const lightbox = document.getElementById("lightbox");
+      lightbox.addEventListener("click", () =>
+        lightbox.classList.remove("show")
+      );
+      function openLightbox(src) {
+        const img = lightbox.querySelector("img");
+        img.src = src;
+        lightbox.classList.add("show");
+      }
+
+      /* ====== 渲染全屏卡片内容 ====== */
+      function renderPage() {
+        const key = order[current];
+        const title = labels[key] || "";
+        let html = "";
+        if (key === "kitchen")
+          html = `<h2>${title}</h2><p>点击下方按钮打开公众号文章列表。</p><p><a target="_blank" href="${LINKS.wechat}" class="open-btn">打开公众号文章</a></p>`;
+        if (key === "dining") {
+          const filters = ["all", "image", "link", "file"];
+          html = `<h2>${title}</h2>
+      <div class="filters">${filters
+        .map(
+          (f, i) =>
+            `<button class="filter-btn ${
+              i === 0 ? "active" : ""
+            }" data-f="${i}">${f}</button>`
+        )
+        .join("")}</div>
+      <div class="works-grid" id="worksGrid"></div>`;
+        }
+        if (key === "bed")
+          html = `<h2>${title}</h2>
+    <div style="display:flex;gap:16px;align-items:center">
+      <img src="avatar.jpg" alt="头像" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.18)"/>
+      <div><p>欢迎来聊～</p><p>（这里填你的微信/邮箱/链接）</p></div>
+    </div>`;
+        if (key === "bath")
+          html = `<h2>${title}</h2><p>这里可以放自我介绍、简历与技能栈。</p>`;
+        if (key === "utility")
+          html = `<h2>${title}</h2><p>之后接入你的图片集。</p>`;
+        if (key === "stairs")
+          html = `<h2>${title}</h2><p>学习 / 读书 / 投资笔记可以放这里。</p>`;
+
+        pageCard.innerHTML = `<div class="inner">${html}</div>`;
+
+        if (key === "dining") {
+          const grid = pageCard.querySelector("#worksGrid");
+          const btns = pageCard.querySelectorAll(".filter-btn");
+          btns.forEach((b) =>
+            b.addEventListener("click", () => {
+              btns.forEach((x) => x.classList.remove("active"));
+              b.classList.add("active");
+              renderWorks(+b.dataset.f);
+            })
+          );
+
+          function renderWorks(fIdx) {
+            grid.innerHTML = "";
+            const list = WORKS.filter((w) => {
+              if (fIdx === 0) return true;
+              if (fIdx === 1) return w.type === "image";
+              if (fIdx === 2) return w.type === "link";
+              if (fIdx === 3) return w.type === "doc";
+            });
+            list.forEach((w) => {
+              const card = document.createElement("div");
+              card.className = "work-card";
+              if (w.type === "image") {
+                card.innerHTML = `<div class="thumb"><img src="${w.src}" alt="${
+                  w.title || ""
+                }"></div>
+                          <div class="meta"><span>${
+                            w.title || "图片"
+                          }</span><span class="tag">图片</span></div>`;
+                card
+                  .querySelector(".thumb img")
+                  .addEventListener("click", () => openLightbox(w.src));
+              } else if (w.type === "link") {
+                card.innerHTML = `<div class="thumb">🔗</div>
+                          <div class="meta"><span>${
+                            w.title || "外部链接"
+                          }</span>
+                          <a class="open-btn" target="_blank" href="${
+                            w.href
+                          }">打开</a></div>`;
+              } else if (w.type === "doc") {
+                const t = w.thumb
+                  ? `<img src="${w.thumb}" alt="${w.title || ""}"/>`
+                  : "📄";
+                card.innerHTML = `<div class="thumb">${t}</div>
+                          <div class="meta"><span>${w.title || "文档"}</span>
+                          <a class="open-btn" target="_blank" href="${
+                            w.href
+                          }">预览/下载</a></div>`;
+              }
+              grid.appendChild(card);
+            });
+          }
+          renderWorks(0);
+        }
+
+        placeLike(); // 保证切换后 ❤ 仍对齐
+      }
+
+      /* ====== 热区点击（放在函数声明之后） ====== */
+      svg.querySelectorAll(".hit").forEach((poly) => {
+        poly.addEventListener("click", () => {
+          if (poly.id === "heartZone") {
+            toggleLike();
+            return;
+          }
+          openPage(poly.id);
+        });
+      });
+    </script>
+  </body>
+</html>
