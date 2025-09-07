@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<!-- saved from url=(0091)file:///C:/Users/34334/Desktop/%E4%B8%AA%E4%BA%BA%E7%BD%91%E7%AB%99/index_mobile_cards.html -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>粉系个人作品集 · 全屏翻页</title>
+    <style>
+      .wx-title {
+        font-size: 15px;
+        line-height: 1.45;
+        font-weight: 700;
+        color: #333;
+        margin: 2px 0 8px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2; /* ← 关键：最多两行 */
+        overflow: hidden;
+      }
+      /* 基础与自适应 */
+      :root {
+        --wrap-w-desktop: 66vw;
+        --wrap-w-max: 820px;
+        --wrap-w-mobile: 92vw;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #f6e9ea;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei",
+          sans-serif;
+        color: #2b2b2b;
+      }
+
+      .wrap {
+        width: min(var(--wrap-w-desktop), var(--wrap-w-max));
+        margin: 32px auto 56px;
+        position: relative; /* 点赞相对定位 */
+      }
+      @media (max-width: 1024px) {
+        .wrap {
+          width: min(72vw, var(--wrap-w-max));
+        }
+      }
+      @media (max-width: 768px) {
+        .wrap {
+          width: var(--wrap-w-mobile);
+          margin: 20px auto 48px;
+        }
+      }
+
+      .bg {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 22px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.12);
+      }
+      svg {
+        position: absolute;
+        inset: 0;
+        border-radius: 22px;
+        z-index: 20;
+        max-width: 100%;
+        height: 100%;
+      }
+      .hit {
+        fill: transparent;
+        stroke: transparent;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: filter 0.2s;
+      }
+      .hit:hover {
+        filter: drop-shadow(0 0 8px rgba(255, 130, 170, 0.45));
+      }
+
+      /* 顶部导航 */
+      .topnav {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 70;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 999px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      }
+      .topnav a {
+        padding: 6px 10px;
+        border-radius: 999px;
+        text-decoration: none;
+        color: #2b2b2b;
+        font-size: 14px;
+      }
+      .topnav a:hover {
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      /* 全屏模块（方案四：卡片居中） */
+      .screen {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: linear-gradient(180deg, #fff6fb 0%, #f8e9ef 100%);
+      }
+      .screen.show {
+        display: block;
+        animation: fadin 0.22s ease;
+      }
+      @keyframes fadin {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .page {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        pointer-events: none;
+      }
+      .page .card {
+        width: min(92vw, 900px);
+        max-height: 82vh;
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 28px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22);
+        padding: 22px;
+        pointer-events: auto;
+        /* 补丁 ④：给卡片左右留出安全边距，避免被左右按钮遮住 */
+        margin: 0 88px;
+      }
+      @media (max-width: 768px) {
+        .page .card {
+          margin: 0 64px;
+        }
+      }
+      @media (max-width: 420px) {
+        .page .card {
+          margin: 0 52px;
+        }
+      }
+      .page h2 {
+        margin: 0 0 8px;
+      }
+
+      /* 翻页/返回 */
+      .screen .nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        border: 0;
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+        z-index: 120;
+      }
+      .screen .nav.prev {
+        left: 16px;
+      }
+      .screen .nav.next {
+        right: 16px;
+      }
+      .backHome {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        border: 0;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(6px);
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        z-index: 120;
+      }
+
+      /* 点赞按钮：位于心形热区中心（相对 .wrap） */
+      .like {
+        position: absolute;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 999px;
+        padding: 8px 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+        font-weight: 700;
+        z-index: 150;
+      }
+
+      /* 作品集网格与灯箱 */
+      .filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 6px 0 12px;
+      }
+      .filter-btn {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: #fff;
+        border-radius: 999px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      .filter-btn.active {
+        background: #ffe8f1;
+        border-color: #ffb3cc;
+      }
+      .works-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+      }
+      .work-card {
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      .work-card .thumb {
+        aspect-ratio: 4/3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .work-card .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .work-card .meta {
+        padding: 10px 12px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .tag {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f6f6f6;
+      }
+      .open-btn {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: #fff;
+        border-radius: 8px;
+        padding: 6px 8px;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+      }
+      .lightbox.show {
+        display: flex;
+      }
+      .lightbox img {
+        max-width: 92vw;
+        max-height: 86vh;
+        border-radius: 14px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        user-select: none;
+      }
+
+      /* 补丁 ②：悬浮提示 tooltip 样式 */
+      .tip {
+        position: fixed;
+        z-index: 170;
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -120%);
+        transition: opacity 0.12s ease;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 6px 10px;
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        font-size: 13px;
+        color: #2b2b2b;
+      }
+      .tip.show {
+        opacity: 1;
+      }
+
+      /* ===== 联系我（bed）样式：仅新增，不影响其他 ===== */
+      .contact-wrap {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 18px;
+        align-items: center;
+      }
+      @media (max-width: 560px) {
+        .contact-wrap {
+          grid-template-columns: 1fr;
+        }
+      }
+      .contact-avatar {
+        width: 108px;
+        height: 108px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+      }
+      .qr-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 8px 0 12px;
+      }
+      .qr-card {
+        width: 156px;
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+        padding: 10px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .qr-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16);
+      }
+      .qr-card img {
+        width: 100%;
+        border-radius: 12px;
+        display: block;
+      }
+      .qr-card label {
+        display: block;
+        text-align: center;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #666;
+      }
+      .mail-line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .mail-line .open-btn {
+        padding: 8px 10px;
+      }
+      /* 公众号卡片更大 + 4:3比例 */
+      .wx-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 22px;
+      }
+      .wx-card {
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .wx-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
+      }
+      .wx-cover {
+        width: 100%;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.35s ease;
+      }
+      .wx-card:hover .wx-cover {
+        transform: scale(1.045);
+      }
+      .wx-body {
+        padding: 12px 14px;
+      }
+      .wx-title {
+        font-size: 15px;
+        line-height: 1.45;
+        font-weight: 700;
+        color: #333;
+        margin: 2px 0 8px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+      .wx-open {
+        display: inline-block;
+        padding: 6px 10px;
+        font-size: 12px;
+        border: 1px solid #ff6fae;
+        border-radius: 8px;
+        color: #ff6fae;
+        text-decoration: none;
+        transition: all 0.18s ease;
+      }
+      .wx-open:hover {
+        background: #ff6fae;
+        color: #fff;
+      }
+      /* === 复制邮箱按钮 + Toast 提示 === */
+      .mail-line .copy-btn {
+        margin-left: 8px;
+        padding: 8px 10px;
+        border: 1px dashed #b8b8b8;
+        background: #fff;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .mail-line .copy-btn:hover {
+        border-color: #ff79b0;
+        color: #ff79b0;
+      }
+
+      .copy-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 12%;
+        transform: translate(-50%, 8px);
+        background: rgba(0, 0, 0, 0.78);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.22s ease, transform 0.22s ease;
+        z-index: 9999;
+      }
+      .copy-toast.show {
+        opacity: 1;
+        transform: translate(-50%, -2px);
+      }
+
+      /* === 公众号卡片优化 === */
+      .wx-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 18px;
+      }
+      .wx-card {
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .wx-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.16);
+      }
+      .wx-cover {
+        width: 100%;
+        aspect-ratio:  16/9;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.35s ease;
+      }
+      .wx-card:hover .wx-cover {
+        transform: scale(1.045);
+      }
+      .wx-body {
+        padding: 12px 14px;
+      }
+      .wx-title {
+        font-size: 15px;
+        line-height: 1.45;
+        font-weight: 700;
+        color: #333;
+        margin: 2px 0 8px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+      }
+      .wx-open {
+        display: inline-block;
+        padding: 6px 10px;
+        font-size: 12px;
+        border: 1px solid #ff6fae;
+        border-radius: 8px;
+        color: #ff6fae;
+        text-decoration: none;
+        transition: all 0.18s ease;
+      }
+      .wx-open:hover {
+        background: #ff6fae;
+        color: #fff;
+      }
+    
+/* ===== Glassmorphism overrides (added by assistant) ===== */
+.page .card {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.30) !important;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25) !important;
+}
+
+.topnav {
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+}
+
+.qr-card, .wx-card, .contact-card {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+/* ===== End glass overrides ===== */
+
+
+/* ===== Override: smaller homepage hero image ===== */
+#bg {
+  width: 72% !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+/* ===== End override ===== */
+
+
+@media (max-width: 560px){
+  .wx-card { border-radius: 20px; }
+  .wx-body { padding: 14px 16px; }
+  .wx-title { font-size: 17px; line-height: 1.35; }
+}
+
+
+/* 首屏引导提示 */
+.hint{
+  font-size:14px;color:#555;text-align:center;
+  background:rgba(255,255,255,.68);
+  border:1px solid rgba(0,0,0,.06);
+  padding:10px 14px;border-radius:12px;
+  backdrop-filter:blur(6px);
+  display:none; /* 默认隐藏，JS 控制出现一次 */
+  margin-top:10px;
+}
+.hint.show{display:inline-block; animation:fadein .22s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none}}
+
+</style>
+  </head>
+  <body>
+    <!-- 顶部导航 -->
+    <div class="topnav">
+      <a data-key="kitchen">公众号</a>
+      <a data-key="dining">作品集</a>
+      <a data-key="bed">联系我</a>
+      <a data-key="bath">关于我</a>
+      <a data-key="utility">相册</a>
+      <a data-key="stairs">笔记</a>
+    </div>
+
+    <!-- 首页 -->
+    <div class="wrap" id="home">
+      <img src="./粉系个人作品集 · 全屏翻页_files/house.png" class="bg" id="bg" alt="房子插图">
+      <svg viewBox="0 0 100 133.333" preserveAspectRatio="none" id="svg">
+        <polygon id="kitchen" class="hit" points="16.567460317460316,38.18332605820106 36.11111111111111,20.10576984126984 35.11904761904761,64.10918716931216 14.880952380952381,63.668271164021164"></polygon>
+        <polygon id="bath" class="hit" points="38.65476190476191,20.973557539682538 49.702380952380956,10.670167328042329 85.41666666666666,37.56604365079365 85.71428571428571,64.28555357142857 37.59920634920635,63.31553835978836"></polygon>
+        <polygon id="dining" class="hit" points="15.079365079365079,67.37196560846562 59.523809523809526,66.4019503968254 58.92857142857143,106.8780396825397 13.59126984126984,105.99620767195768"></polygon>
+        <polygon id="bed" class="hit" points="62.51190476190476,67.22925132275132 75,67.1955992063492 87.51190476190476,67.22925132275132 88.69047619047619,105.90802447089946 61.70634920634921,106.78985648148148"></polygon>
+        <polygon id="utility" class="hit" points="7.87037037037037,110.49355092592593 39.120370370370374,111.59094187242798 38.04012345679013,140.39745421810701 8.256172839506174,140.39745421810701"></polygon>
+        <polygon id="stairs" class="hit" points="41.358024691358025,111.72811574074073 59.49074074074075,112.68833281893005 59.79938271604939,140.39745421810701 41.2037037037037,140.39745421810701"></polygon>
+        <polygon id="heartZone" class="hit" points="74.20634920634922,138.35944246031744 69.3452380952381,131.3047863756614 70.23809523809524,124.16194708994709 75.1984126984127,118.78277182539682 82.53968253968253,120.10551984126984 89.18650793650794,118.69458862433862 94.84126984126985,124.86741269841269 95.03968253968254,131.21660317460316 91.56746031746032,138.35944246031744 82.0436507936508,143.29770171957674"></polygon>
+      </svg>
+      <button class="like on" id="likeBtn" style="left: 673.978px; top: 845.91px;">
+        ❤️ <span id="likeCount">4</span>
+      </button>
+      <div class="hint" id="homeHint">点击房间，进入对应模块（作品集 / 公众号 / 联系我…）</div>
+    </div>
+
+    <!-- 补丁 ①：悬浮提示层 -->
+    <div id="tooltip" class="tip show" style="left: 548px; top: 364px;">关于我</div>
+
+    <!-- 全屏模块卡片 -->
+    <div class="screen" id="screen">
+      <button class="backHome" id="backHome">🏠</button>
+      <button class="nav prev" id="prevBtn">‹</button>
+      <button class="nav next" id="nextBtn">›</button>
+      <div class="page"><div class="card" id="pageCard"><div class="inner">
+    <h2>公众号</h2>
+    <p style="margin-top:-4px;color:#666">点击卡片或「打开文章」在新标签查看公众号文章。</p>
+    <div class="wx-grid">
+    <article class="wx-card">
+      <a href="https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg" target="_blank" rel="noopener">
+        <img class="wx-cover" src="./粉系个人作品集 · 全屏翻页_files/wx_a.jpg" alt="晚上有蚊子在耳朵边嗡嗡叫，睡不着怎么办？🦟🦟🦟" loading="lazy">
+      </a>
+      <div class="wx-body">
+        <div class="wx-title">晚上有蚊子在耳朵边嗡嗡叫，睡不着怎么办？🦟🦟🦟</div>
+        <a class="wx-open" href="https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg" target="_blank" rel="noopener">打开文章</a>
+      </div>
+    </article>
+  
+    <article class="wx-card">
+      <a href="https://mp.weixin.qq.com/s/gvXwUF-Vc3T8N4rEM_-6oQ" target="_blank" rel="noopener">
+        <img class="wx-cover" src="./粉系个人作品集 · 全屏翻页_files/wx_b.jpg" alt="未来的朋友，是我的AI先认识的？" loading="lazy">
+      </a>
+      <div class="wx-body">
+        <div class="wx-title">未来的朋友，是我的AI先认识的？</div>
+        <a class="wx-open" href="https://mp.weixin.qq.com/s/gvXwUF-Vc3T8N4rEM_-6oQ" target="_blank" rel="noopener">打开文章</a>
+      </div>
+    </article>
+  
+    <article class="wx-card">
+      <a href="https://mp.weixin.qq.com/s/r2yfYEw4KA1dKRDJQuUpYQ" target="_blank" rel="noopener">
+        <img class="wx-cover" src="./粉系个人作品集 · 全屏翻页_files/wx_c.jpg" alt="我和小C的相处方式" loading="lazy">
+      </a>
+      <div class="wx-body">
+        <div class="wx-title">我和小C的相处方式</div>
+        <a class="wx-open" href="https://mp.weixin.qq.com/s/r2yfYEw4KA1dKRDJQuUpYQ" target="_blank" rel="noopener">打开文章</a>
+      </div>
+    </article>
+  </div>
+  </div></div></div>
+    </div>
+
+    <!-- 图片灯箱 -->
+    <div class="lightbox" id="lightbox"><img alt=""></div>
+
+    <script>
+      function mountCopyEmail() {
+        const btn = document.querySelector(".copy-btn");
+        if (!btn) return;
+        const email = btn.dataset.email || "3433463263@qq.com";
+
+        btn.addEventListener("click", async () => {
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(email);
+            } else {
+              // 兼容旧浏览器
+              const ta = document.createElement("textarea");
+              ta.value = email;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              ta.remove();
+            }
+            showCopyToast("已复制邮箱：" + email);
+          } catch (e) {
+            showCopyToast("复制失败，请手动复制：" + email);
+          }
+        });
+      }
+
+      function showCopyToast(msg) {
+        let t = document.getElementById("copyToast");
+        if (!t) {
+          t = document.createElement("div");
+          t.id = "copyToast";
+          t.className = "copy-toast";
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 1400);
+      }
+      // 你的公众号文章清单（按需增删）
+      const WECHAT_ARTICLES = [
+        {
+          tag: "生活",
+          title: "晚上有蚊子在耳朵边嗡嗡叫，睡不着怎么办？🦟🦟🦟",
+          cover: "wx/wx_a.jpg", // 封面图路径（建议放到 /wx/ 目录）
+          url: "https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg",
+        },
+        { tag: "随笔", tag: "AI",
+          title: "未来的朋友，是我的AI先认识的？",
+          cover: "wx/wx_b.jpg",
+          url: "https://mp.weixin.qq.com/s/gvXwUF-Vc3T8N4rEM_-6oQ",
+        },
+        {
+          title: "我和小C的相处方式",
+          cover: "wx/wx_c.jpg",
+          url: "https://mp.weixin.qq.com/s/r2yfYEw4KA1dKRDJQuUpYQ",
+        },
+      ];
+      /* ====== 坐标（你的成果） ====== */
+      const AREAS = {
+        kitchen: [
+          [16.567460317460316, 38.18332605820106],
+          [36.11111111111111, 20.10576984126984],
+          [35.11904761904761, 64.10918716931216],
+          [14.880952380952381, 63.668271164021164],
+        ],
+        bath: [
+          [38.65476190476191, 20.973557539682538],
+          [49.702380952380956, 10.670167328042329],
+          [85.41666666666666, 37.56604365079365],
+          [85.71428571428571, 64.28555357142857],
+          [37.59920634920635, 63.31553835978836],
+        ],
+        dining: [
+          [15.079365079365079, 67.37196560846562],
+          [59.523809523809526, 66.4019503968254],
+          [58.92857142857143, 106.8780396825397],
+          [13.59126984126984, 105.99620767195768],
+        ],
+        bed: [
+          [62.51190476190476, 67.22925132275132],
+          [75, 67.1955992063492],
+          [87.51190476190476, 67.22925132275132],
+          [88.69047619047619, 105.90802447089946],
+          [61.70634920634921, 106.78985648148148],
+        ],
+        utility: [
+          [7.87037037037037, 110.49355092592593],
+          [39.120370370370374, 111.59094187242798],
+          [38.04012345679013, 140.39745421810701],
+          [8.256172839506174, 140.39745421810701],
+        ],
+        stairs: [
+          [41.358024691358025, 111.72811574074073],
+          [59.49074074074075, 112.68833281893005],
+          [59.79938271604939, 140.39745421810701],
+          [41.2037037037037, 140.39745421810701],
+        ],
+        heartZone: [
+          [74.20634920634922, 138.35944246031744],
+          [69.3452380952381, 131.3047863756614],
+          [70.23809523809524, 124.16194708994709],
+          [75.1984126984127, 118.78277182539682],
+          [82.53968253968253, 120.10551984126984],
+          [89.18650793650794, 118.69458862433862],
+          [94.84126984126985, 124.86741269841269],
+          [95.03968253968254, 131.21660317460316],
+          [91.56746031746032, 138.35944246031744],
+          [82.0436507936508, 143.29770171957674],
+        ],
+      };
+
+      /* ====== 渲染多边形 ====== */
+      const svg = document.getElementById("svg");
+      for (const id in AREAS) {
+        const el = document.getElementById(id);
+        if (el)
+          el.setAttribute(
+            "points",
+            AREAS[id].map((p) => p.join(",")).join(" ")
+          );
+      }
+
+      /* ====== 顶部导航/标签（含心形说明） ====== */
+      const order = ["kitchen", "dining", "bed", "bath", "utility", "stairs"];
+      const labels = {
+        kitchen: "公众号",
+        dining: "作品集",
+        bed: "联系我",
+        bath: "关于我",
+        utility: "相册",
+        stairs: "笔记",
+        heartZone: "点赞",
+      };
+      document
+        .querySelectorAll(".topnav a")
+        .forEach((a) => (a.onclick = () => openPage(a.dataset.key)));
+
+      /* ====== 点赞（本地单票，可取消） ====== */
+      const likeKey = "site-like-count-v1";
+      const likedKey = "site-like-liked-v1";
+      const likeBtn = document.getElementById("likeBtn");
+      const likeCount = document.getElementById("likeCount");
+      function loadLike() {
+        const liked = localStorage.getItem(likedKey) === "1";
+        likeCount.textContent = Number(localStorage.getItem(likeKey) || 0);
+        likeBtn.classList.toggle("on", liked);
+      }
+      function toggleLike() {
+        let c = Number(localStorage.getItem(likeKey) || 0);
+        const liked = localStorage.getItem(likedKey) === "1";
+        if (liked) {
+          c = Math.max(0, c - 1);
+          localStorage.setItem(likedKey, "0");
+        } else {
+          c = c + 1;
+          localStorage.setItem(likedKey, "1");
+        }
+        localStorage.setItem(likeKey, c);
+        loadLike();
+        placeLike();
+      }
+      likeBtn.onclick = toggleLike;
+      loadLike();
+
+      /* ====== ❤ 定位到心形热区几何中心（getBBox） ====== */
+      function placeLike() {
+        const wrap = document.getElementById("home");
+        const heart = document.getElementById("heartZone");
+        if (!wrap || !heart) return;
+
+        const vbW = 100,
+          vbH = 133.333; // viewBox 固定值
+        const box = heart.getBBox(); // SVG 坐标系
+        const cx = box.x + box.width / 2;
+        const cy = box.y + box.height / 2;
+
+        const r = wrap.getBoundingClientRect();
+        likeBtn.style.left = r.width * (cx / vbW) + "px";
+        likeBtn.style.top = r.height * (cy / vbH) + "px";
+      }
+      window.addEventListener("load", placeLike);
+      window.addEventListener("resize", placeLike);
+
+      /* ====== 补丁 ③：悬浮提示 tooltip ====== */
+      const tooltip = document.getElementById("tooltip");
+      function showTip(text, x, y) {
+        tooltip.textContent = text;
+        tooltip.style.left = x + "px";
+        tooltip.style.top = y + "px";
+        tooltip.classList.add("show");
+      }
+      function hideTip() {
+        tooltip.classList.remove("show");
+      }
+      svg.querySelectorAll(".hit").forEach((poly) => {
+        const name = labels[poly.id];
+        if (!name) return;
+        poly.addEventListener("mousemove", (e) =>
+          showTip(name, e.clientX, e.clientY)
+        );
+        poly.addEventListener("mouseleave", hideTip);
+        poly.addEventListener(
+          "touchstart",
+          (e) => {
+            const t = e.touches[0];
+            showTip(name, t.clientX, t.clientY);
+            setTimeout(hideTip, 900);
+          },
+          { passive: true }
+        );
+      });
+
+      /* ====== 全屏模块（方案四） ====== */
+      const screenEl = document.getElementById("screen");
+      const pageCard = document.getElementById("pageCard");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const backHome = document.getElementById("backHome");
+      let current = 0;
+
+      function openPage(key) {
+        hideTip(); // 进页面时隐藏提示
+        current = Math.max(0, order.indexOf(key));
+        if (current < 0) current = 0;
+        renderPage();
+        screenEl.classList.add("show");
+      }
+      function closePage() {
+        screenEl.classList.remove("show");
+      }
+      backHome.onclick = closePage;
+      prevBtn.onclick = () => {
+        current = (current - 1 + order.length) % order.length;
+        renderPage();
+      };
+      nextBtn.onclick = () => {
+        current = (current + 1) % order.length;
+        renderPage();
+      };
+      window.addEventListener("keydown", (e) => {
+        if (!screenEl.classList.contains("show")) return;
+        if (e.key === "ArrowLeft") prevBtn.click();
+        if (e.key === "ArrowRight") nextBtn.click();
+        if (e.key === "Escape") closePage();
+      });
+
+      /* ====== 作品集数据（示例） ====== */
+      const LINKS = {
+        wechat: "https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg",
+      };
+      const WORKS = [
+        { type: "image", src: "gallery/1.jpg", title: "protrait" },
+        { type: "image", src: "gallery/2.jpg", title: "插画 2" },
+        {
+          type: "link",
+          href: "https://mp.weixin.qq.com/s/EEK0YhOpDj9HWEAe6oWjBg",
+          title: "晚上有蚊子在耳朵边嗡嗡叫，睡不着怎么办？🦟🦟🦟",
+        },
+        {
+          type: "doc",
+          href: "docs/《文化具有多样性》教学设计.docx",
+          title: "《文化具有多样性》教学设计（docx）",
+          thumb: "docs/《文化具有多样性》教学设计.png",
+        },
+        { type: "image", src: "gallery/3.jpg", title: "插画 3" },
+      ];
+
+      /* ====== 灯箱 ====== */
+      const lightbox = document.getElementById("lightbox");
+      lightbox.addEventListener("click", () =>
+        lightbox.classList.remove("show")
+      );
+      function openLightbox(src) {
+        const img = lightbox.querySelector("img");
+        img.src = src;
+        lightbox.classList.add("show");
+      }
+
+      /* ====== 渲染全屏卡片内容 ====== */
+      function renderPage() {
+        const key = order[current];
+        const title = labels[key] || "";
+        let html = "";
+        
+        if (key === "kitchen") {
+          // 动态生成标签
+          const tags = Array.from(new Set(WECHAT_ARTICLES.map(a => a.tag || '全部')));
+          const allTags = ['全部', ...tags.filter(t => t && t !== '全部')];
+
+          function renderList(activeTag='全部'){
+            const items = WECHAT_ARTICLES.filter(a => activeTag==='全部' ? true : a.tag === activeTag);
+            const cards = items.map(a => `
+              <article class="wx-card">
+                <a href="${a.url}" target="_blank" rel="noopener">
+                  <img class="wx-cover" src="${a.cover}" alt="${a.title}" loading="lazy">
+                </a>
+                <div class="wx-body">
+                  <div class="wx-title">${a.title}</div>
+                  <a class="wx-open" href="${a.url}" target="_blank" rel="noopener">打开文章</a>
+                </div>
+              </article>
+            `).join("");
+
+            const tagBtns = allTags.map(t => `<button class="filter-btn" data-tag="${t}">${t}</button>`).join('');
+            const inner = `
+              <h2>${title}</h2>
+              <p style="margin-top:-4px;color:#666">按标签筛选，点击卡片或「打开文章」在新标签查看公众号文章。</p>
+              <div class="filters" id="wxTags">${tagBtns}</div>
+              <div class="wx-grid">${cards}</div>
+            `;
+            pageCard.innerHTML = `<div class="inner">${inner}</div>`;
+            // 激活样式 & 绑定事件
+            const btns = pageCard.querySelectorAll('#wxTags .filter-btn');
+            btns.forEach(b => {
+              if (b.dataset.tag === activeTag) b.classList.add('active');
+              b.addEventListener('click', () => renderList(b.dataset.tag));
+            });
+          }
+          renderList();
+          return;
+        }
+        
+        if (key === "dining") {
+          const filters = ["all", "image", "link", "file"];
+          html = `<h2>${title}</h2>
+      <div class="filters">${filters
+        .map(
+          (f, i) =>
+            `<button class="filter-btn ${
+              i === 0 ? "active" : ""
+            }" data-f="${i}">${f}</button>`
+        )
+        .join("")}</div>
+      <div class="works-grid" id="worksGrid"></div>`;
+        }
+        if (key === "bed")
+          html = `
+  <h2>${title}</h2>
+  <div class="contact-wrap">
+    <img class="contact-avatar" src="avatar.jpg" alt="头像" loading="lazy">
+    <div>
+      <div class="qr-row">
+        <div class="qr-card">
+          <img src="wechat.png" alt="微信二维码" loading="lazy" data-tip="微信扫码加我">
+          <label>微信二维码</label>
+        </div>
+        <div class="qr-card">
+          <img src="mp.png" alt="公众号二维码" loading="lazy" data-tip="扫码查看我的公众号">
+          <label>公众号二维码</label>
+        </div>
+      </div>
+      <div class="mail-line">
+        <a class="open-btn" href="mailto:3433463263@qq.com" rel="noopener">📮 发邮件</a>
+        <button class="copy-btn" data-email="3433463263@qq.com">复制邮箱</button>
+        <span>QQ邮箱：<a href="mailto:3433463263@qq.com">3433463263@qq.com</a></span>
+      </div>
+    </div>
+  </div>
+`;
+        if (key === "bath")
+          html = `<h2>${title}</h2><p>昵称：莹莹</p>
+<p>出没地点：杭州、宁波</p>
+<p>基本信息：准大二，思政师范专业</p>
+<p>属性：</p>
+<p>-1x100柿子</p>
+
+<p>标签：</p>
+<p>-AI爱好者</p>
+<p>-平时更点公众号文章（AI，抽象文较多）</p>
+<p>-喜欢尝试：剧本杀dm、摆摊…..</p>
+<p>-喜欢交朋友</p>
+
+<p>我的故事：</p>
+<p>-用AI写教案来赚钱，变现2700+</p>
+<p>-运营学校校园墙</p>
+<p>-兼职卖移动校园卡</p>
+<p>-自发尝试过一个两周的《福格行为模型》生活实验。</p>
+<p>-去当过剧本杀dm，上了3次班，就辞职了。</p>
+<p>-尝试过摆摊，最后写了1个《摆摊避雷指南》。</p>
+<p>-尝试学塔罗牌，还没学会。</p>`;
+        if (key === "utility")
+          html = `<h2>${title}</h2><p>之后接入你的图片集。</p>`;
+        if (key === "stairs")
+          html = `<h2>${title}</h2><p>学习 / 读书 / 投资笔记可以放这里。</p>`;
+
+        pageCard.innerHTML = `<div class="inner">${html}</div>`;
+        if (key === "bed") {
+          mountCopyEmail();
+        }
+
+        if (key === "dining") {
+          const grid = pageCard.querySelector("#worksGrid");
+          const btns = pageCard.querySelectorAll(".filter-btn");
+          btns.forEach((b) =>
+            b.addEventListener("click", () => {
+              btns.forEach((x) => x.classList.remove("active"));
+              b.classList.add("active");
+              renderWorks(+b.dataset.f);
+            })
+          );
+
+          function renderWorks(fIdx) {
+            grid.innerHTML = "";
+            const list = WORKS.filter((w) => {
+              if (fIdx === 0) return true;
+              if (fIdx === 1) return w.type === "image";
+              if (fIdx === 2) return w.type === "link";
+              if (fIdx === 3) return w.type === "doc";
+            });
+            list.forEach((w) => {
+              const card = document.createElement("div");
+              card.className = "work-card";
+              if (w.type === "image") {
+                card.innerHTML = `<div class="thumb"><img src="${w.src}" alt="${
+                  w.title || ""
+                }"></div>
+                          <div class="meta"><span>${
+                            w.title || "图片"
+                          }</span><span class="tag">图片</span></div>`;
+                card
+                  .querySelector(".thumb img")
+                  .addEventListener("click", () => openLightbox(w.src));
+              } else if (w.type === "link") {
+                card.innerHTML = `<div class="thumb">🔗</div>
+                          <div class="meta"><span>${
+                            w.title || "外部链接"
+                          }</span>
+                          <a class="open-btn" target="_blank" href="${
+                            w.href
+                          }">打开</a></div>`;
+              } else if (w.type === "doc") {
+                const t = w.thumb
+                  ? `<img src="${w.thumb}" alt="${w.title || ""}"/>`
+                  : "📄";
+                card.innerHTML = `<div class="thumb">${t}</div>
+                          <div class="meta"><span>${w.title || "文档"}</span>
+                          <a class="open-btn" target="_blank" href="${
+                            w.href
+                          }">预览/下载</a></div>`;
+              }
+              grid.appendChild(card);
+            });
+          }
+          renderWorks(0);
+        }
+
+        placeLike(); // 保证切换后 ❤ 仍对齐
+      }
+
+      /* ====== 热区点击（放在函数声明之后） ====== */
+      svg.querySelectorAll(".hit").forEach((poly) => {
+        poly.addEventListener("click", () => {
+          if (poly.id === "heartZone") {
+            toggleLike();
+            return;
+          }
+          openPage(poly.id);
+        });
+      });
+    
+// 首屏提示：仅首次显示
+(function(){
+  try{
+    const key='home-hint-seen-v2';
+    const el=document.getElementById('homeHint');
+    if(!el) return;
+    if(!localStorage.getItem(key)){
+      el.classList.add('show');
+      setTimeout(()=>{ el.classList.remove('show'); localStorage.setItem(key,'1'); }, 2200);
+    }
+  }catch(e){}
+})();
+
+</script>
+  
+
+</body></html>
